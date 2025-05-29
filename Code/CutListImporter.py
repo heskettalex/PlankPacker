@@ -8,13 +8,11 @@ def readCutList(inputFile):
     with open(inputFile) as file:
         for line_num, l in enumerate(file, start=1):
             line = re.sub(r'[^0-9x:.\-]', '', l)
-            print(f"{l}, {line}")
             if len(line) == 0:
                 continue
             try:
                 if line[-1] == ":":
                     category = (int(line[0 : line.index("x")]), int(line[line.index("x") + 1 : line.index(":")]))
-                    print(category)
                     if category not in cutsDict:
                         cutsDict[category] = []
                     currentCategory = category  
