@@ -1,4 +1,5 @@
 import os
+import re
 
 def readCutList(inputFile):
     cutsDict = {}
@@ -6,18 +7,20 @@ def readCutList(inputFile):
 
     with open(inputFile) as file:
         for line_num, l in enumerate(file, start=1):
-            line = l.strip()
+            line = re.sub(r'[^0-9x:.\-]', '', l)
+            print(f"{l}, {line}")
             if len(line) == 0:
                 continue
             try:
                 if line[-1] == ":":
                     category = (int(line[0 : line.index("x")]), int(line[line.index("x") + 1 : line.index(":")]))
+                    print(category)
                     if category not in cutsDict:
                         cutsDict[category] = []
                     currentCategory = category  
                 else:
                     count = int(line[0 : line.index("x")])
-                    measurement = float(line[line.index("x") + 2 :])
+                    measurement = float(line[line.index("x") + 1 :])
                     for _ in range(count):
                         cutsDict[currentCategory].append(measurement)
             except Exception as e:
