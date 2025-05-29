@@ -49,6 +49,6 @@ Once PlankPacker is provided at least an input cut list to work with, the packin
 ### Output
 Once the desired lists are opened and the packing algorithm has been run, PlankPacker will output a text file containing an **order summary** and **cut list instructions**. 
 - Order summary: How many additional planks are needed to create the desired cuts (after accounting for the inventory if provided).
-- Cut list instructions: How to cut the planks indicated in the input cut list from the newly ordered planks (and inventory if provided).
+- Cut list instructions: How to cut the planks indicated in the input cut list from the newly ordered planks (and inventory if provided). Planks cut from an inventory item are tagged with a "*" and highlighted blue for clarity.
 
 This text file can be saved with the "Save" button in the upper right.
