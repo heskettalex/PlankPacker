@@ -2,7 +2,7 @@
 
 
 a = Analysis(
-    ['PlankPacker.py'],
+    ['Code\\PlankPacker.py'],
     pathex=[],
     binaries=[],
     datas=[],
