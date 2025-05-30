@@ -1,5 +1,6 @@
 import os
 import re
+from Utils import frac_to_value
 
 def readCutList(inputFile):
     cutsDict = {}
@@ -7,7 +8,7 @@ def readCutList(inputFile):
 
     with open(inputFile) as file:
         for line_num, l in enumerate(file, start=1):
-            line = re.sub(r'[^0-9x:.\-]', '', l)
+            line = l.strip()
             if len(line) == 0:
                 continue
             try:
@@ -17,8 +18,10 @@ def readCutList(inputFile):
                         cutsDict[category] = []
                     currentCategory = category  
                 else:
-                    count = int(line[0 : line.index("x")])
-                    measurement = float(line[line.index("x") + 1 :])
+                    count = line[0 : line.index("x")]
+                    count = int(re.sub(r'[^0-9]', '', count))
+
+                    measurement = frac_to_value(line[line.index("x") + 1:])
                     for _ in range(count):
                         cutsDict[currentCategory].append(measurement)
             except Exception as e:

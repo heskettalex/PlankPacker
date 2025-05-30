@@ -1,6 +1,9 @@
 import math
 from Plank import Plank
+from Utils import value_to_frac
 from collections import Counter
+
+    
 def stats(cuts , orderLength, overflowIncrement):
     totalLength = 0.0
     totalWaste = 0.0
@@ -40,7 +43,7 @@ def summary(cuts):
 
         plank_counter = Counter(planks)
         for plank, count in plank_counter.items():
-            line = f" - {count}x {plank.length}\"\n"
+            line = f" - {count}x {value_to_frac(plank.length)}\"\n"
             if not plank.inventory:
                 order += line
 
@@ -59,11 +62,11 @@ def printCuts(cuts):
         inventory = ""
         order = ""
         for plank, count in plank_counter:
-            line = f"{count}x {plank.length}\" => "
+            line = f"{count}x {value_to_frac(plank.length)}\" => "
 
             if len(plank.cuts) == 1:
                 cut = plank.cuts[0]
-                line += f"{count}x {cut}\""
+                line += f"{count}x {value_to_frac(cut)}\""
             else:
                 if count > 1:
                     line += f"{count}x ({plank})"

@@ -6,6 +6,7 @@ import CutListImporter
 import PackingAlgorithm
 import CutListAnalyzer
 from collections import Counter
+from Utils import value_to_frac
 import os
 
 def open_cutList(cutList, panel, button, txt, label, error, isRequired):
@@ -25,7 +26,7 @@ def open_cutList(cutList, panel, button, txt, label, error, isRequired):
             cutListText += f"{category[0]}x{category[1]}:\n"
             cut_counter = Counter(cutList[category])
             for cut, count in cut_counter.items():
-                cutListText += f" - {count}x {cut}\"\n"
+                cutListText += f" - {count}x {value_to_frac(cut)}\"\n"
         txt.insert(END, cutListText)
         txt.configure(state="disabled")
         label['text'] = os.path.basename(filepath)
@@ -33,6 +34,7 @@ def open_cutList(cutList, panel, button, txt, label, error, isRequired):
         if isRequired:
             btn_pack.config(state="normal")
     except Exception as e:
+        print(e)
         error.grid()
 
 def clear_cutList(cutList, panel, button, isRequired):
@@ -108,6 +110,7 @@ def pack():
         lbl_error.pack_forget()
     except Exception as e:
         lbl_error.pack(side="bottom")
+        print(e)
         return
 
     packedList.clear()
@@ -156,7 +159,7 @@ def main():
 
     window.columnconfigure(1, weight=1)
     window.columnconfigure(0, minsize=200)
-    window.rowconfigure(0, minsize=650, weight=1)
+    window.rowconfigure(0, minsize=700, weight=1)
 
     frm_input = Frame(
         master=window, 
@@ -205,7 +208,7 @@ def main():
 
     lbl_stats = Label(
         master=frm_input,
-        text=""
+        text="\n\n\n"
     )
 
     frm_output = Frame(master=window)
