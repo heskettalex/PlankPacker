@@ -16,9 +16,9 @@ Both lists must be formatted in a specific way in order for PlankPacker to read 
 
 Example category lines: `2x4:`, `1 x 3:`
 
-**Measurement:** A properly formatted measurement line at minimum must contain a **quantity** and a **measurement** number seperated by an **"x"**. Measurement lines indicate what the packing algorithm has to work with.
+**Measurement:** A properly formatted measurement line at minimum must contain a **quantity** and a **measurement** number seperated by an **"x"**. Measurements can be written either as decimals or fractions, but will always be displayed as fractions in the editor. Measurement lines indicate what the packing algorithm has to work with.
 
-Example measurement lines: `3x 48`, `1x96"`
+Example measurement lines: `3x 48`, `1x 96 1/16", 2x72.5`
 
 **Note: As the examples indicate, all non-required characters, spaces, and indents in a line are automatically ignored by the program, but are okay to include for visual clarity!**
 
@@ -26,12 +26,12 @@ Example measurement lines: `3x 48`, `1x96"`
 ```
 1x3:
   4x 96"
-  7x 45"
-  24x 36"
+  7x 45 1/2"
+  24x 36 7/16"
 
 2x4:
   8x 72"
-  3x 20"
+  3x 20 3/4"
   4x 48"
   8x 120"
 
