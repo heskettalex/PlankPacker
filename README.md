@@ -1,3 +1,4 @@
+![PlankPacker Icon](https://github.com/heskettalex/PlankPacker/blob/main/Assets/icon.png)
 # Welcome to PlankPacker!
 
 PlankPacker is a simple program designed to speed up the process of creating order lists and packed cut lists for construction projects.
