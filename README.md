@@ -15,7 +15,7 @@ Both lists must be formatted in a specific way in order for PlankPacker to read 
 **Category:** Category lines allow PlankPacker to pack different types of wood seperately. A properly formatted category line at minimum must contain two numbers (indicating the nominal dimensions of the lumber) separated by an **"x"**, and punctuated with a **colon.** 
 Example category lines: `2x4:`, `1 x 3:`
 
-**Measurement:** Measurement lines indicate what the packing algorithm has to work with. A properly formatted measurement line at minimum must contain a **quantity** and a **measurement** number seperated by an **"x"**. Measurements can be written either as decimals or fractions, but will always be displayed as fractions in the editor. Additionally, a **note** may be added following the measurement to indicate any necessary information. Notes must begin with a **"#"** to be recognized by PlankPacker, and will be displayed in all subsequent lists containing the cut.
+**Measurement:** Measurement lines indicate what the packing algorithm has to work with. A properly formatted measurement line at minimum must contain a **quantity** and a **measurement** number seperated by an **"x"**. Measurements can be written either as decimals or fractions, but will always be displayed as fractions in the editor. Additionally, a **note** may be added following the measurement to indicate any additional information. Notes must begin with a **"#"** to be recognized by PlankPacker, and will be displayed in all subsequent lists containing the cut.
 
 Example measurement lines: `3x 48`, `1x 96 1/16" #45 degrees /==\, 2x72.5`
 
@@ -24,14 +24,14 @@ Example measurement lines: `3x 48`, `1x 96 1/16" #45 degrees /==\, 2x72.5`
 ### Example PlankPacker list:
 ```
 1x3:
-  4x 96"
+  4x 96" #Railings
   7x 45 1/2"
   24x 36 7/16"
 
 2x4:
   8x 72"
   3x 20 3/4"
-  4x 48"
+  4x 48" #45 degrees /==\
   8x 120"
 
 4x4:
