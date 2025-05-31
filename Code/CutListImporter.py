@@ -21,9 +21,14 @@ def readCutList(inputFile):
                     count = line[0 : line.index("x")]
                     count = int(re.sub(r'[^0-9]', '', count))
 
-                    measurement = frac_to_value(line[line.index("x") + 1:])
+                    note = ""
+                    if "#" in line:
+                        note = line[line.index("#") + 1:].strip()
+                        measurement = frac_to_value(line[line.index("x") + 1:line.index("#")])
+                    else:
+                        measurement = frac_to_value(line[line.index("x") + 1:])
                     for _ in range(count):
-                        cutsDict[currentCategory].append(measurement)
+                        cutsDict[currentCategory].append((measurement, note))
             except Exception as e:
                 raise Exception(f"Error on line {line_num}: \"{line}\", {e}")
     numCategories = len(cutsDict)

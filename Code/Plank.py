@@ -8,16 +8,30 @@ class Plank:
         self.cuts = []
     
     def freeStock(self):
-        return self.length - sum(self.cuts)
+        sum = 0
+        for cut in self.cuts:
+            sum += cut[0]
+        return self.length - sum
     
     def addCut(self, cut: float):
-        if cut > self.freeStock():
-            raise ValueError(f"Cut {cut} is too long for plank of length {self.length}.")
+        if cut[0] > self.freeStock():
+            raise ValueError(f"Cut {cut[0]} is too long for plank of length {self.length}.")
         self.cuts.append(cut)
 
     def __str__(self):
         counts = Counter(self.cuts)
-        return "+ ".join(f"{count}x {value_to_frac(cut)}\"" for cut, count in counts.items())
+        output = ""
+        first = True
+        for cut, count in counts.items():
+            if first:
+                first = False
+            else:
+                output += " + "
+            if cut[1] == "":
+                output += f"{count}x {value_to_frac(cut[0])}\""
+            else:
+                output += f"{count}x {value_to_frac(cut[0])}\" ({cut[1]})"
+        return output
     
     def __eq__(self, other):
         if not isinstance(other, Plank):

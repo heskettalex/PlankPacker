@@ -27,7 +27,10 @@ def open_cutList(cutList, panel, button, txt, label, error, isRequired):
             cutListText += f"{category[0]}x{category[1]}:\n"
             cut_counter = Counter(cutList[category])
             for cut, count in cut_counter.items():
-                cutListText += f" - {count}x {value_to_frac(cut)}\"\n"
+                if cut[1] == "":
+                    cutListText += f" - {count}x {value_to_frac(cut[0])}\"\n"
+                else:
+                    cutListText += f" - {count}x {value_to_frac(cut[0])} ({cut[1]})\"\n"
         txt.insert(END, cutListText)
         txt.configure(state="disabled")
         label['text'] = os.path.basename(filepath)
@@ -46,7 +49,7 @@ def clear_cutList(cutList, panel, button, isRequired):
     if isRequired:
         btn_pack.config(state="disabled")
 
-def list_import_panel(master, title, output_list, isRequired=False, width=20, height=10, color="white"):
+def list_import_panel(master, title, output_list, isRequired=False, width=30, height=10, color="white"):
     frm_panel = Frame(master= master, pady=5)
     
     frm_button = Frame(master= frm_panel)
@@ -150,12 +153,12 @@ def visualize():
     row = 30
     padding = 5
     bar_indent = 90
-    bar_scale = 8
+    bar_scale = 5
     bar_thickness = 0
+    bar_thickness = 25
     for category in packedList:
         thickness, width = category
         row += bar_thickness / 2 + padding + 25
-        bar_thickness = width * bar_scale
         cnvs_vis.create_text(20, row, text=f"{thickness}x{width}:", anchor="w")
         plank_counter = Counter(packedList[category]).most_common()
         plank_counter = sorted(plank_counter, key=lambda x: x[0].inventory)
@@ -181,7 +184,7 @@ def visualize():
                 outline_color = "DimGrey"
                 waste_color = "Gainsboro"
             for cut in plank.cuts:
-                width = cut * bar_scale
+                width = cut[0] * bar_scale
                 cnvs_vis.create_rectangle(
                     bar_indent + offset, 
                     row - bar_thickness / 2, 
@@ -191,12 +194,21 @@ def visualize():
                     outline= outline_color,
                     width = 2
                     )
-                cnvs_vis.create_text(
-                    bar_indent + offset + width / 2,
-                    row,
-                    text=f"{value_to_frac(cut)}\"",
-                    anchor="center"
-                )
+                
+                if cut[1] == "":
+                    cnvs_vis.create_text(
+                        bar_indent + offset + width / 2,
+                        row,
+                        text=f"{value_to_frac(cut[0])}\"",
+                        anchor="center"
+                    )
+                else:
+                    cnvs_vis.create_text(
+                        bar_indent + offset + width / 2,
+                        row,
+                        text=f"{value_to_frac(cut[0])}\" ({cut[1]})",
+                        anchor="center"
+                    )
                 offset += width
             cnvs_vis.create_rectangle(
                 bar_indent + offset, 
@@ -221,11 +233,19 @@ def save():
 def toggle_visualize():
     if checkbox_visualize.get():
         frm_vis.grid(column=1, row=0, sticky="nsew")
+        frm_output.columnconfigure(0, weight=0)
+        frm_output.columnconfigure(1, weight=1)
     else:
         frm_vis.grid_forget()
+        frm_output.columnconfigure(0, weight=1)
+        frm_output.columnconfigure(1, weight=0)
+    window.update_idletasks()
+    req_width = window.winfo_reqwidth()
+    req_height = window.winfo_reqheight()
+    window.geometry(f"{req_width}x{req_height}")
 
 def main():
-    global cutList, inventoryList, packedList, stringOutput, btn_pack, txt_order, txt_instructions, frm_vis, checkbox_visualize, cnvs_vis, lbl_error, ent_length, ent_overflow, lbl_stats, btn_save
+    global cutList, inventoryList, packedList, stringOutput, window, btn_pack, txt_order, txt_instructions, frm_vis, frm_output, checkbox_visualize, cnvs_vis, lbl_error, ent_length, ent_overflow, lbl_stats, btn_save
     cutList = {}
     inventoryList = {}
     packedList = {}
@@ -237,7 +257,7 @@ def main():
     frm_input = Frame(
         master=window, 
         relief=RAISED, 
-        width = 215,
+        width = 300,
         bd=5, 
         padx=5, 
         pady=5, 
@@ -292,7 +312,7 @@ def main():
     lbl_output = Label(
         master= frm_listTitle,
         text="Packing Output",
-        bd=5
+        bd=6
     )
 
     lbl_check = Label(master= frm_listTitle, text="Visualize Cuts")
@@ -330,7 +350,7 @@ def main():
     )
 
     frm_cnvs = Frame(master= frm_vis)
-    cnvs_vis = Canvas(frm_cnvs, bg= "white", width=500, bd=1, relief="sunken")
+    cnvs_vis = Canvas(frm_cnvs, bg= "white", width=600, bd=1, relief="sunken")
     vsb = Scrollbar(frm_cnvs, orient="vertical", command= cnvs_vis.yview)
     hsb = Scrollbar(frm_cnvs, orient="horizontal", command= cnvs_vis.xview)
     cnvs_vis.configure(yscrollcommand=vsb.set)
@@ -376,8 +396,8 @@ def main():
     ent_length.grid(column=1, row=0, sticky="e")
 
     frm_output.grid(column=1, row=0, sticky="nsew")
-    frm_output.columnconfigure(0, weight=0)
-    frm_output.columnconfigure(1, weight=1)
+    frm_output.columnconfigure(0, weight=1)
+    frm_output.columnconfigure(1, weight=0)
     frm_output.rowconfigure(0, weight=1)
 
     frm_list.grid(column=0, row=0, sticky="nsew")
@@ -406,6 +426,7 @@ def main():
     hsb.pack(side="bottom", fill="x")
     cnvs_vis.pack(side="left", fill="both", expand=True) 
 
+    
     window.mainloop()
 
 if __name__ == "__main__":

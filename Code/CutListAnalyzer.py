@@ -19,10 +19,10 @@ def stats(cuts , orderLength, overflowIncrement):
                 inventoryCuts += len(plank.cuts)
             totalCuts += len(plank.cuts)
             for cut in plank.cuts:
-                if cut > orderLength:
-                    maxWaste += math.ceil(cut / overflowIncrement) * overflowIncrement - cut
+                if cut[0] > orderLength:
+                    maxWaste += math.ceil(cut[0] / overflowIncrement) * overflowIncrement - cut[0]
                 else:
-                    maxWaste += orderLength - cut
+                    maxWaste += orderLength - cut[0]
 
     return f"Waste reduced by {(1 - totalWaste / maxWaste) * 100:.1f}%\n\nWaste: {totalWaste / totalLength * 100:.1f}%\nInventory utilization: {inventoryCuts / totalCuts * 100:.1f}%"
 
@@ -66,7 +66,10 @@ def printCuts(cuts):
 
             if len(plank.cuts) == 1:
                 cut = plank.cuts[0]
-                line += f"{count}x {value_to_frac(cut)}\""
+                if cut[1] == "":
+                    line += f"{count}x {value_to_frac(cut[0])}\""
+                else:
+                    line += f"{count}x {value_to_frac(cut[0])}\" ({cut[1]})"
             else:
                 if count > 1:
                     line += f"{count}x ({plank})"
