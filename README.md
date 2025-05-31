@@ -12,13 +12,12 @@ To generate a packed cut list with PlankPacker, you must first input a **cut lis
 
 Both lists must be formatted in a specific way in order for PlankPacker to read them. Every line in a PlankPacker list must either indicate a new **category** of plank, or a new **measurement** of that type of plank. The formatting for each is as followed:
 
-**Category:** A properly formatted category line at minimum must contain two numbers (indicating the nominal dimensions of the lumber) separated by an **"x"**, and punctuated with a **colon.** Category lines allow PlankPacker to pack different types of wood seperately.
-
+**Category:** Category lines allow PlankPacker to pack different types of wood seperately. A properly formatted category line at minimum must contain two numbers (indicating the nominal dimensions of the lumber) separated by an **"x"**, and punctuated with a **colon.** 
 Example category lines: `2x4:`, `1 x 3:`
 
-**Measurement:** A properly formatted measurement line at minimum must contain a **quantity** and a **measurement** number seperated by an **"x"**. Measurements can be written either as decimals or fractions, but will always be displayed as fractions in the editor. Measurement lines indicate what the packing algorithm has to work with.
+**Measurement:** Measurement lines indicate what the packing algorithm has to work with. A properly formatted measurement line at minimum must contain a **quantity** and a **measurement** number seperated by an **"x"**. Measurements can be written either as decimals or fractions, but will always be displayed as fractions in the editor. Additionally, a **note** may be added following the measurement to indicate any necessary information. Notes must begin with a **"#"** to be recognized by PlankPacker, and will be displayed in all subsequent lists containing the cut.
 
-Example measurement lines: `3x 48`, `1x 96 1/16", 2x72.5`
+Example measurement lines: `3x 48`, `1x 96 1/16" #45 degrees /==\, 2x72.5`
 
 **Note: As the examples indicate, all non-required characters, spaces, and indents in a line are automatically ignored by the program, but are okay to include for visual clarity!**
 
@@ -52,3 +51,6 @@ Once the desired lists are opened and the packing algorithm has been run, PlankP
 - Cut list instructions: How to cut the planks indicated in the input cut list from the newly ordered planks (and inventory if provided). Planks cut from an inventory item are tagged with a "*" and highlighted blue for clarity.
 
 This text file can be saved with the "Save" button in the upper right.
+
+### Visualization
+To visualize how the cuts are spaced on each plank, check the "visualize cuts" checkbox in the upper right corner of the "packing output" panel. This visualization is only visible in the PlankPacker editor, and is not saved to the output.
