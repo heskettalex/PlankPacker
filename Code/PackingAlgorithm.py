@@ -8,29 +8,29 @@ def packCuts(cuts, orderLength, overflowIncrement, inventory=None): #cuts are or
         packedCuts[category] = []
         packedCuts[category].append(Plank(orderLength))
         try:
-            for p in inventory[category]:
-                inventoryPlank = Plank(p[0], True)
+            for length, note in inventory[category]:
+                inventoryPlank = Plank(length, note, True)
                 packedCuts[category].append(inventoryPlank)
         except Exception:
             pass
 
         packedCuts[category].reverse()
 
-        for cut in cuts[category]:
+        for cut_length, note in cuts[category]:
             placed = False
             for plank in packedCuts[category]:
                 try:
-                    plank.addCut(cut)
+                    plank.addCut((cut_length, note))
                     placed = True
                     break
                 except ValueError:
                     continue
             if not placed:
-                if cut[0] > orderLength:
-                    newPlank = Plank(math.ceil((cut[0] - orderLength) / overflowIncrement) * overflowIncrement + orderLength)
+                if cut_length > orderLength:
+                    newPlank = Plank(math.ceil((cut_length - orderLength) / overflowIncrement) * overflowIncrement + orderLength)
                 else:
                     newPlank = Plank(orderLength)
-                newPlank.addCut(cut)
+                newPlank.addCut((cut_length, note))
 
                 inserted = False
                 for i in range(len(packedCuts[category])):

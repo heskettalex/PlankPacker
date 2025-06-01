@@ -2,10 +2,11 @@ from collections import Counter
 from Utils import value_to_frac
 
 class Plank:
-    def __init__(self, length: float, inventory: bool = False):
+    def __init__(self, length: float, note: str="", inventory: bool = False):
         self.length = length
         self.inventory = inventory
         self.cuts = []
+        self.note = note
     
     def freeStock(self):
         sum = 0
@@ -13,7 +14,7 @@ class Plank:
             sum += cut[0]
         return self.length - sum
     
-    def addCut(self, cut: float):
+    def addCut(self, cut: tuple):
         if cut[0] > self.freeStock():
             raise ValueError(f"Cut {cut[0]} is too long for plank of length {self.length}.")
         self.cuts.append(cut)

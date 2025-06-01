@@ -1,16 +1,18 @@
 import tkinter as tk
-from tkinter import Frame, Button, BooleanVar, Label, Entry, RAISED, END, Canvas, Scrollbar, Checkbutton
+from tkinter import Frame, Button, BooleanVar, Label, Entry, RAISED, END, Canvas, Scrollbar, Checkbutton, PanedWindow
 import tkinter.font as tkfont
 from tkinter.filedialog import askopenfilename, asksaveasfilename
 import tkinter.scrolledtext as st
 import CutListImporter
 import PackingAlgorithm
 import CutListAnalyzer
+from Plank import Plank
 from collections import Counter
 from Utils import value_to_frac
 import os
 
-def open_cutList(cutList, panel, button, txt, label, error, isRequired):
+def open_cutList(cutList, panel, button, txt_widget, label, error, isRequired):
+    global fileName
     filepath = askopenfilename(filetypes=[("Text Files", ".txt"), ("All Files", "*.*")])
     if not filepath:
         return
@@ -20,43 +22,49 @@ def open_cutList(cutList, panel, button, txt, label, error, isRequired):
         error.grid_remove()
         panel.grid()
         button.grid_remove()
-        txt.configure(state="normal")
-        txt.delete("1.0", END)
+        txt_widget.configure(state="normal")
+        txt_widget.delete("1.0", END)
         cutListText = ""
         for category in cutList:
             cutListText += f"{category[0]}x{category[1]}:\n"
             cut_counter = Counter(cutList[category])
-            for cut, count in cut_counter.items():
-                if cut[1] == "":
-                    cutListText += f" - {count}x {value_to_frac(cut[0])}\"\n"
+            for (length, note), count in cut_counter.items():
+                if note == "":
+                    cutListText += f" - {count}x {value_to_frac(length)}\"\n"
                 else:
-                    cutListText += f" - {count}x {value_to_frac(cut[0])} ({cut[1]})\"\n"
-        txt.insert(END, cutListText)
-        txt.configure(state="disabled")
+                    cutListText += f" - {count}x {value_to_frac(length)} ({note})\"\n"
+        txt_widget.insert(END, cutListText)
+
+
         label['text'] = os.path.basename(filepath)
 
         if isRequired:
             btn_pack.config(state="normal")
+            fileName = os.path.basename(filepath)
+        txt_widget.configure(state="disabled")
+
     except Exception as e:
         print(e)
         error.grid()
 
-def clear_cutList(cutList, panel, button, isRequired):
+def clear_cutList(cutList, panel, button, main):
     panel.grid_remove()
     button.grid()
     cutList.clear()
 
-    if isRequired:
+    if main:
         btn_pack.config(state="disabled")
 
-def list_import_panel(master, title, output_list, isRequired=False, width=30, height=10, color="white"):
+def list_import_panel(master, title, output_list, main=False, width=38, height=10):
     frm_panel = Frame(master= master, pady=5)
-    
+    frm_panel.rowconfigure(1, weight=1)
+    frm_panel.columnconfigure(0, weight=1)
+
     frm_button = Frame(master= frm_panel)
     btn_open = Button(
         master= frm_button, 
         text= title, 
-        command= lambda: open_cutList(output_list, frm_txt, frm_button, txt_list, label, lbl_error, isRequired)
+        command= lambda: open_cutList(output_list, frm_txt, frm_button, txt_list, label, lbl_error, main)
     )
     lbl_error = Label(
         master= frm_button,
@@ -66,16 +74,23 @@ def list_import_panel(master, title, output_list, isRequired=False, width=30, he
 
     frm_txt = Frame(master= frm_panel, relief= RAISED, bd= 3)
 
+    if main:
+        color = "White"
+        text_color = "Black"
+    else:
+        color = "LightCyan"
+        text_color = "DarkCyan"
+
     txt_list = st.ScrolledText(
         master= frm_txt,
         width= width,
         height= height,
+        fg= text_color
     )
-    txt_list.configure(state= "disabled")
 
     frm_label = Frame(
         master= frm_txt, 
-        bg=color
+        bg= color
     )
     
     btn_close = Button(
@@ -83,13 +98,13 @@ def list_import_panel(master, title, output_list, isRequired=False, width=30, he
         text= "X", 
         padx=4,
         bg="LightPink",
-        command= lambda: clear_cutList(output_list, frm_txt, frm_button, isRequired)
+        command= lambda: clear_cutList(output_list, frm_txt, frm_button, main)
     )
 
     label = Label(
         master= frm_label,
         text= "",
-        bg=color
+        bg= color
     )
 
     frm_button.grid(row=0, sticky="w")
@@ -99,11 +114,15 @@ def list_import_panel(master, title, output_list, isRequired=False, width=30, he
 
     frm_txt.grid(row=1, sticky="ew")
     frm_txt.grid_remove()
+    frm_txt.rowconfigure(1, weight=1)
+    frm_txt.columnconfigure(0, weight=1)
+    
     frm_label.grid(row=0, sticky= "ew")
     btn_close.grid(column=0, row=0, sticky="w")
     label.grid(column=1, row=0, sticky="w")
     txt_list.grid(row=1, sticky= "nsew")
-
+        
+    txt_list.configure(state= "disabled")
     return frm_panel
 
 def pack():
@@ -134,22 +153,31 @@ def pack():
     txt_instructions.delete("1.0", END)
     txt_instructions.insert(END, instructions)
 
-    txt_instructions.tag_configure("inventory", background= "LightCyan")
+    txt_instructions.tag_configure("inventory", foreground= "DarkCyan")
     start_idx = 1.0
     for line in instructions.splitlines():
         if "*" in line:
-            line_start = f"{int(start_idx)}.0"
-            line_end = f"{int(start_idx)}.end"
+            line_start = f"{int(start_idx)}.{line.find("- ") + 2}"
+            line_end = f"{int(start_idx)}.{line.find(" =")}"
             txt_instructions.tag_add("inventory", line_start, line_end)
         start_idx = int(start_idx) + 1
 
     txt_instructions.configure(state="disabled")
+    btn_save_spreadsheet.config(state= "normal")
     btn_save.config(state= "normal")
     visualize()
 
+def get_fitting_font(canvas, text, max_width, max_size=9, min_size=5, font_family="Segoe UI"):
+    size = max_size
+    font = tkfont.Font(family=font_family, size=size)
+    while size > min_size and font.measure(text) > max_width:
+        size -= 1
+        font = tkfont.Font(family=font_family, size=size)
+    return font
 
 def visualize():
     cnvs_vis.delete("all")
+    label = checkbox_visLabel.get()
     row = 30
     padding = 5
     bar_indent = 90
@@ -169,20 +197,35 @@ def visualize():
                 first = False
             else:
                 row += bar_thickness + padding
-            cnvs_vis.create_text(
-                80, 
-                row, 
-                text=f"{count}x {value_to_frac(plank.length)}\"", 
-                anchor="e")
-            offset = 0
+            
             if plank.inventory:
                 cut_color = "Wheat"
                 outline_color = "DarkCyan"
                 waste_color = "LightCyan"
+                text_color = "DarkCyan"
             else:
                 cut_color = "NavajoWhite"
                 outline_color = "DimGrey"
                 waste_color = "Gainsboro"
+                text_color = "Black"
+            
+            if plank.note == "":
+                cnvs_vis.create_text(
+                    80, 
+                    row, 
+                    text=f"{count}x {value_to_frac(plank.length)}\"", 
+                    anchor="e",
+                    fill= text_color
+                    )
+            else:
+                cnvs_vis.create_text(
+                    80, 
+                    row, 
+                    text=f"{count}x {value_to_frac(plank.length)}\" ({plank.note})", 
+                    anchor="e",
+                    fill= text_color
+                    )
+            offset = 0
             for cut in plank.cuts:
                 width = cut[0] * bar_scale
                 cnvs_vis.create_rectangle(
@@ -195,20 +238,27 @@ def visualize():
                     width = 2
                     )
                 
-                if cut[1] == "":
-                    cnvs_vis.create_text(
-                        bar_indent + offset + width / 2,
-                        row,
-                        text=f"{value_to_frac(cut[0])}\"",
-                        anchor="center"
-                    )
-                else:
-                    cnvs_vis.create_text(
-                        bar_indent + offset + width / 2,
-                        row,
-                        text=f"{value_to_frac(cut[0])}\" ({cut[1]})",
-                        anchor="center"
-                    )
+                if label:
+                    if cut[1] == "":
+                        label_text = f"{value_to_frac(cut[0])}\""
+                        font = get_fitting_font(cnvs_vis, label_text, width)
+                        cnvs_vis.create_text(
+                            bar_indent + offset + width / 2,
+                            row,
+                            text=label_text,
+                            anchor="center",
+                            font= font,
+                        )
+                    else:
+                        label_text = f"{value_to_frac(cut[0])}\" ({cut[1]})"
+                        font = get_fitting_font(cnvs_vis, label_text, width)
+                        cnvs_vis.create_text(
+                            bar_indent + offset + width / 2,
+                            row,
+                            text=label_text,
+                            anchor="center",
+                            font=font
+                        )
                 offset += width
             cnvs_vis.create_rectangle(
                 bar_indent + offset, 
@@ -223,41 +273,61 @@ def visualize():
     bounds = cnvs_vis.bbox("all")
     cnvs_vis.config(scrollregion= (0, bounds[1] - 25, bounds[2], bounds[3] + 5))
 
-def save():
-    filepath = asksaveasfilename(filetypes=[("Text Files", ".txt"), ("All Files", "*.*")])
+def save_txt():
+    filepath = asksaveasfilename(
+        defaultextension=".txt",
+        filetypes=[("Text Files", ".txt"), ("All Files", "*.*")],
+        initialfile= f"{fileName[0:fileName.index(".")]}_Instructions.txt"
+        )
     if not filepath:
         return
     with open(filepath, mode="w", encoding="utf-8") as output_file:
         output_file.write(stringOutput)
 
+def save_spreadsheet():
+    filepath = asksaveasfilename(
+        defaultextension=".xlsx",
+        filetypes=[("Excel Files", ".xlsx"), ("All Files", "*.*")],
+        initialfile= f"{fileName[0:fileName.index(".")]}_Instructions.xlsx"
+        )
+    if not filepath:
+        return
+    
+    CutListAnalyzer.generate_spreadsheet(packedList, filepath)
+
 def toggle_visualize():
-    if checkbox_visualize.get():
-        frm_vis.grid(column=1, row=0, sticky="nsew")
-        frm_output.columnconfigure(0, weight=0)
-        frm_output.columnconfigure(1, weight=1)
+    global last_vis_size
+    if checkbox_vis.get():
+        output_paned.add(frm_vis, minsize=50)
+        if window.state() != "zoomed":
+            output_paned.sash_place(0, frm_list.winfo_width(), 0)
+        window.update_idletasks()
+        req_height = window.winfo_reqheight()
+        window.geometry(f"{window.winfo_width() + last_vis_size}x{req_height}")
     else:
-        frm_vis.grid_forget()
-        frm_output.columnconfigure(0, weight=1)
-        frm_output.columnconfigure(1, weight=0)
-    window.update_idletasks()
-    req_width = window.winfo_reqwidth()
-    req_height = window.winfo_reqheight()
-    window.geometry(f"{req_width}x{req_height}")
+        req_height = window.winfo_reqheight()
+        last_vis_size = frm_vis.winfo_width()
+        window.geometry(f"{window.winfo_width() - frm_vis.winfo_width()}x{req_height}")
+        output_paned.forget(frm_vis)
+        window.update_idletasks()
 
 def main():
-    global cutList, inventoryList, packedList, stringOutput, window, btn_pack, txt_order, txt_instructions, frm_vis, frm_output, checkbox_visualize, cnvs_vis, lbl_error, ent_length, ent_overflow, lbl_stats, btn_save
+    global fileName, cutList, inventoryList, packedList, stringOutput, window, btn_pack, txt_order, txt_instructions, frm_list, frm_vis, output_paned, checkbox_vis, checkbox_visLabel, cnvs_vis, lbl_error, ent_length, ent_overflow, lbl_stats, btn_save, btn_save_spreadsheet, last_vis_size
     cutList = {}
     inventoryList = {}
     packedList = {}
     stringOutput = ""
+    last_vis_size = 600
+    fileName = ""
     
     window = tk.Tk()
     window.title("PlankPacker")
+    paned = PanedWindow(window, orient="horizontal")
 
     frm_input = Frame(
-        master=window, 
+        master=paned, 
         relief=RAISED, 
-        width = 300,
+        width = 350,
         bd=5, 
         padx=5, 
         pady=5, 
@@ -270,7 +340,7 @@ def main():
         ).pack()
 
     frm_cutList = list_import_panel(frm_input, "Add Cut List", cutList, True)
-    frm_inventory = list_import_panel(frm_input, "Add Inventory List (Optional)", inventoryList, color="LightCyan")
+    frm_inventory = list_import_panel(frm_input, "Add Inventory List (Optional)", inventoryList)
 
     frm_length = Frame(master= frm_input, pady=5)
     ent_length = Entry(master= frm_length, width=10, border=2)
@@ -301,14 +371,17 @@ def main():
 
     lbl_stats = Label(
         master=frm_input,
-        text="\n\n\n"
+        text="\n"
     )
 
-    frm_output = Frame(master=window)
+    frm_output = Frame(master=paned)
+    output_paned = PanedWindow(frm_output, orient="horizontal")
 
     frm_list = Frame(master=frm_output, relief="raised", bd=3)
+    list_paned = PanedWindow(master=frm_list, orient="vertical")
+    frm_order = Frame(master=frm_list)
 
-    frm_listTitle = Frame(master=frm_list)
+    frm_listTitle = Frame(master=frm_order)
     lbl_output = Label(
         master= frm_listTitle,
         text="Packing Output",
@@ -317,36 +390,59 @@ def main():
 
     lbl_check = Label(master= frm_listTitle, text="Visualize Cuts")
 
-    checkbox_visualize = BooleanVar(value=False)
+    checkbox_vis = BooleanVar(value=False)
     checkBtn_vis = Checkbutton(
         master= frm_listTitle,
         text="",
-        variable= checkbox_visualize,
+        variable= checkbox_vis,
         command= toggle_visualize
     )
-
-    txt_order = st.ScrolledText(frm_list, width=50, height=12)
+    
+    txt_order = st.ScrolledText(frm_order, width=50, height=12)
     txt_order.configure(state= "disabled")
 
-    txt_instructions = st.ScrolledText(frm_list, width=50)
+    frm_instructions = Frame(master=frm_list)
+    txt_instructions = st.ScrolledText(frm_instructions, width=50)
     txt_instructions.configure(state= "disabled")
 
-    btn_save = Button(
-        master= frm_list,
-        text= "Save",
-        command = save,
-        padx=20,
+    frm_save = Frame(master=frm_list)
+    btn_save_spreadsheet = Button(
+        master= frm_save,
+        text= "Save as Spreadsheet",
+        command = save_spreadsheet,
+        padx=10,
         bg= "PaleGreen"
+    )
+    btn_save_spreadsheet.config(state= "disabled")
+    
+    btn_save = Button(
+        master= frm_save,
+        text= "Save as .txt",
+        command = save_txt,
+        padx=10,
+        bg= "White"
     )
 
     btn_save.config(state= "disabled")
 
     frm_vis = Frame(master= frm_output, relief="raised", bd=3)
 
+    frm_visTitle = Frame(master= frm_vis)
     lbl_vis = Label(
-        master= frm_vis,
+        master= frm_visTitle,
         text= "Cut Visualization",
         bd=5
+    )
+    lbl_checkVisLabel = Label(
+        master= frm_visTitle,
+        text= "Label Cuts"
+    )
+    checkbox_visLabel = BooleanVar(value=True)
+    checkBtn_visLabel = Checkbutton(
+        master= frm_visTitle,
+        text="",
+        variable= checkbox_visLabel,
+        command= visualize
     )
 
     frm_cnvs = Frame(master= frm_vis)
@@ -373,14 +469,17 @@ def main():
 
     cnvs_vis.bind("<Enter>", _bind_mousewheel)
     cnvs_vis.bind("<Leave>", _unbind_mousewheel)
-    
+
+    paned.grid(row=0, column=0, columnspan=2, sticky="nsew")
+    paned.add(frm_input, minsize=200)
+    paned.add(frm_output, minsize=300)
+
     window.columnconfigure(0, minsize=150)
     window.columnconfigure(1, weight=1)
     window.rowconfigure(0, minsize=650, weight=1)
 
-    frm_input.grid(column=0, sticky="nsew")
-    frm_cutList.pack(anchor="w")
-    frm_inventory.pack(anchor="w")
+    frm_cutList.pack(fill="x", anchor="nw")
+    frm_inventory.pack(fill="x", anchor="nw")
 
     lbl_stats.pack(side="bottom")
     btn_pack.pack(side="bottom", pady=10)
@@ -395,32 +494,50 @@ def main():
     lbl_length.grid(column=0, row=0, sticky="e")
     ent_length.grid(column=1, row=0, sticky="e")
 
-    frm_output.grid(column=1, row=0, sticky="nsew")
     frm_output.columnconfigure(0, weight=1)
-    frm_output.columnconfigure(1, weight=0)
     frm_output.rowconfigure(0, weight=1)
 
-    frm_list.grid(column=0, row=0, sticky="nsew")
-    frm_list.rowconfigure(0, weight=0)
-    frm_list.rowconfigure(1, weight=0)
-    frm_list.rowconfigure(2, weight=1)
+    output_paned.grid(row=0, column=0, sticky="nsew")
+    output_paned.add(frm_list, minsize=50)
+
+    list_paned.grid(row=0, column=0, sticky="nsew")
+    frm_list.rowconfigure(0, weight=1)
     frm_list.columnconfigure(0, weight=1)
+    list_paned.add(frm_order, minsize= 50)
+    list_paned.add(frm_instructions, minsize= 50)
+    frm_order.rowconfigure(1, weight=1)
+    frm_order.columnconfigure(0, weight=1)
+    frm_listTitle.grid(row=0, column=0, sticky="ew")
+    txt_order.grid(row=1, column=0, sticky="nsew")
+    frm_instructions.rowconfigure(0, weight=1)
+    frm_instructions.rowconfigure(1, weight=0)
+    frm_instructions.columnconfigure(0, weight=1)
+    txt_instructions.grid(row=0, column=0, sticky="nsew")
+
+    frm_save.grid(row=1, column=0, sticky="e")
+    frm_save.columnconfigure(0, weight=1)
+    frm_save.columnconfigure(1, weight=1)
+    btn_save_spreadsheet.grid(row=0, column=0, sticky="e", padx=5, pady=5)
+    btn_save.grid(row=0, column=1, sticky="e", padx=5, pady=5)
     
     frm_listTitle.grid(row=0, column=0, sticky="ew")
     frm_listTitle.columnconfigure(0, weight=1)
     frm_listTitle.columnconfigure(1, weight=1)
-    lbl_output.grid(column=0, row=0, columnspan=2, sticky="ew")
+    frm_listTitle.columnconfigure(2, weight=0)
+    lbl_output.grid(column=0, row=0, columnspan=3, sticky="ew")
     lbl_check.grid(column=1, row=0, sticky="e")
     checkBtn_vis.grid(column=2, row=0, sticky="e", padx=(0, 5))
-
-    txt_order.grid(column=0, row=1, sticky="nsew")
-    txt_instructions.grid(column=0, row=2, sticky="nsew", pady=10)
-    btn_save.grid(column=0, row=3, sticky= "e", padx=15, pady=(0, 8))
 
     frm_vis.rowconfigure(1, weight=1)
     frm_vis.columnconfigure(0, weight=1)
 
-    lbl_vis.grid(column=0, row=0)
+    frm_visTitle.grid(column=0, row=0, sticky="ew")
+    frm_visTitle.columnconfigure(0, weight=1)
+    frm_visTitle.columnconfigure(1, weight=1)
+    frm_listTitle.columnconfigure(2, weight=0)
+    lbl_vis.grid(column=0, row=0, columnspan=3, sticky="ew")
+    lbl_checkVisLabel.grid(column=1, row=0, sticky="e")
+    checkBtn_visLabel.grid(column=2, row=0, sticky="e", padx=(0, 5))
     frm_cnvs.grid(column=0, row=1, sticky="nsew")
     vsb.pack(side="right", fill="y")
     hsb.pack(side="bottom", fill="x")
