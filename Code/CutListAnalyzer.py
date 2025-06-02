@@ -5,7 +5,7 @@ from Utils import value_to_frac
 from collections import Counter
 
     
-def stats(cuts , orderLength, overflowIncrement):
+def stats(cuts):
     totalLength = 0.0
     totalWaste = 0.0
     totalCuts = 0

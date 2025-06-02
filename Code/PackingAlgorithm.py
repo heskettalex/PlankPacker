@@ -1,12 +1,12 @@
 from Plank import Plank
 import math
 
-def packCuts(cuts, orderLength, overflowIncrement, inventory=None): #cuts are ordered greatest to least
+def packCuts(cuts, order_lengths, inventory=None):
     packedCuts = {key: None for key in cuts}
 
     for category in packedCuts:
         packedCuts[category] = []
-        packedCuts[category].append(Plank(orderLength))
+        packedCuts[category].append(Plank(order_lengths[0]))
         try:
             for length, note in inventory[category]:
                 inventoryPlank = Plank(length, note, True)
@@ -15,7 +15,6 @@ def packCuts(cuts, orderLength, overflowIncrement, inventory=None): #cuts are or
             pass
 
         packedCuts[category].reverse()
-
         for cut_length, note in cuts[category]:
             placed = False
             for plank in packedCuts[category]:
@@ -26,10 +25,10 @@ def packCuts(cuts, orderLength, overflowIncrement, inventory=None): #cuts are or
                 except ValueError:
                     continue
             if not placed:
-                if cut_length > orderLength:
-                    newPlank = Plank(math.ceil((cut_length - orderLength) / overflowIncrement) * overflowIncrement + orderLength)
-                else:
-                    newPlank = Plank(orderLength)
+                for length in order_lengths:
+                    if cut_length < length:
+                        newPlank = Plank(length)
+                        break
                 newPlank.addCut((cut_length, note))
 
                 inserted = False
