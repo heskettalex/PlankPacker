@@ -11,122 +11,126 @@ from collections import Counter
 from Utils import value_to_frac
 import os
 
-def open_cutList(cutList, panel, button, txt_widget, label, error, isRequired):
-    global fileName
-    filepath = askopenfilename(filetypes=[("Text Files", ".txt"), ("All Files", "*.*")])
-    if not filepath:
-        return
-    cutList.clear()
-    try:
-        cutList.update(CutListImporter.readCutList(filepath))
-        error.grid_remove()
-        panel.grid()
-        button.grid_remove()
-        txt_widget.configure(state="normal")
-        txt_widget.delete("1.0", END)
-        cutListText = ""
-        for category in cutList:
-            cutListText += f"{category[0]}x{category[1]}:\n"
-            cut_counter = Counter(cutList[category])
-            for (length, note), count in cut_counter.items():
-                if note == "":
-                    cutListText += f" - {count}x {value_to_frac(length)}\"\n"
-                else:
-                    cutListText += f" - {count}x {value_to_frac(length)} ({note})\"\n"
-        txt_widget.insert(END, cutListText)
+class List_Import(Frame):
+    def open_list(self, open_command):
+        filepath = askopenfilename(filetypes=[("Text Files", ".txt"), ("All Files", "*.*")])
+        if not filepath:
+            return
+        self.list_variable.clear()
+        try:
+            self.list_variable.update(CutListImporter.readCutList(filepath))
+            self.lbl_error.grid_remove()
+            self.frm_txt.grid()
+            self.btn_open.grid_remove()
+            self.txt_list.configure(state="normal")
+            self.txt_list.delete("1.0", END)
+            cutListText = ""
+            for category in self.list_variable:
+                cutListText += f"{category[0]}x{category[1]}:\n"
+                cut_counter = Counter(self.list_variable[category])
+                for (length, note), count in cut_counter.items():
+                    if note == "":
+                        cutListText += f" - {count}x {value_to_frac(length)}\"\n"
+                    else:
+                        cutListText += f" - {count}x {value_to_frac(length)} ({note})\"\n"
+            self.txt_list.insert(END, cutListText)
 
 
-        label['text'] = os.path.basename(filepath)
+            self.lbl_title['text'] = os.path.basename(filepath)
+            self.txt_list.configure(state="disabled")
+            
+            if open_command is not None:
+                open_command()
 
-        if isRequired:
-            btn_pack.config(state="normal")
-            fileName = os.path.basename(filepath)
-        txt_widget.configure(state="disabled")
+        except Exception as e:
+            print(e)
+            self.lbl_error.grid()
 
-    except Exception as e:
-        print(e)
-        error.grid()
+    def clear_list(self, clear_command):
+        self.frm_txt.grid_remove()
+        self.btn_open.grid()
+        self.list_variable.clear()
 
-def clear_cutList(cutList, panel, button, main):
-    panel.grid_remove()
-    button.grid()
-    cutList.clear()
+        if clear_command is not None:
+            clear_command()
 
-    if main:
-        btn_pack.config(state="disabled")
+    def __init__(self, parent, list_variable: dict, open_command=None, clear_command=None, text="", width=38, height=10, button_fg = "Black", button_bg = "White", title_fg = "Black", title_bg = "White", list_fg= "Black", list_bg = "White"):
+        Frame.__init__(self, parent)
 
-def list_import_panel(master, title, output_list, main=False, width=38, height=10):
-    frm_panel = Frame(master= master, pady=5)
-    frm_panel.rowconfigure(1, weight=1)
-    frm_panel.columnconfigure(0, weight=1)
+        self.list_variable = list_variable
+        self.open_command = open_command
 
-    frm_button = Frame(master= frm_panel)
-    btn_open = Button(
-        master= frm_button, 
-        text= title, 
-        command= lambda: open_cutList(output_list, frm_txt, frm_button, txt_list, label, lbl_error, main)
-    )
-    lbl_error = Label(
-        master= frm_button,
-        text= "Error: list formatted incorrectly!",
-        fg="red"
-    )
+        self.rowconfigure(1, weight=1)
+        self.columnconfigure(0, weight=1)
 
-    frm_txt = Frame(master= frm_panel, relief= RAISED, bd= 3)
+        self.frm_button = Frame(self)
+        self.btn_open = Button(
+            master= self.frm_button, 
+            text= text, 
+            command= lambda: self.open_list(open_command),
+            fg = button_fg,
+            bg = button_bg
+        )
+        self.lbl_error = Label(
+            master= self.frm_button,
+            text= "Error: list formatted incorrectly!",
+            fg="red"
+        )
 
-    if main:
-        color = "White"
-        text_color = "Black"
-    else:
-        color = "LightCyan"
-        text_color = "DarkCyan"
+        self.frm_txt = Frame(master= self, relief= RAISED, bd= 3)
 
-    txt_list = st.ScrolledText(
-        master= frm_txt,
-        width= width,
-        height= height,
-        fg= text_color
-    )
+        self.txt_list = st.ScrolledText(
+            master= self.frm_txt,
+            width= width,
+            height= height,
+            fg= list_fg,
+            bg = list_bg
+        )
 
-    frm_label = Frame(
-        master= frm_txt, 
-        bg= color
-    )
-    
-    btn_close = Button(
-        master= frm_label, 
-        text= "X", 
-        padx=4,
-        bg="LightPink",
-        command= lambda: clear_cutList(output_list, frm_txt, frm_button, main)
-    )
-
-    label = Label(
-        master= frm_label,
-        text= "",
-        bg= color
-    )
-
-    frm_button.grid(row=0, sticky="w")
-    btn_open.grid(row=0, sticky="w")
-    lbl_error.grid(row=1, sticky="w")
-    lbl_error.grid_remove()
-
-    frm_txt.grid(row=1, sticky="ew")
-    frm_txt.grid_remove()
-    frm_txt.rowconfigure(1, weight=1)
-    frm_txt.columnconfigure(0, weight=1)
-    
-    frm_label.grid(row=0, sticky= "ew")
-    btn_close.grid(column=0, row=0, sticky="w")
-    label.grid(column=1, row=0, sticky="w")
-    txt_list.grid(row=1, sticky= "nsew")
+        self.frm_label = Frame(
+            master= self.frm_txt, 
+            bg= title_bg
+        )
         
-    txt_list.configure(state= "disabled")
-    return frm_panel
+        self.btn_close = Button(
+            master= self.frm_label, 
+            text= "X", 
+            padx=4,
+            bg="LightPink",
+            command= lambda: self.clear_list(clear_command)
+        )
+
+        self.lbl_title = Label(
+            master= self.frm_label,
+            text= "",
+            fg = title_fg,
+            bg = title_bg
+        )
+
+        self.frm_button.grid(row=0, sticky="w")
+        self.btn_open.grid(row=0, sticky="w")
+        self.lbl_error.grid(row=1, sticky="w")
+        self.lbl_error.grid_remove()
+
+        self.frm_txt.grid(row=0, sticky="ew")
+        self.frm_txt.grid_remove()
+        self.frm_txt.rowconfigure(1, weight=1)
+        self.frm_txt.columnconfigure(0, weight=1)
+        
+        self.frm_label.grid(row=0, sticky= "ew")
+        self.btn_close.grid(column=0, row=0, sticky="w")
+        self.lbl_title.grid(column=1, row=0, sticky="w")
+        self.txt_list.grid(row=1, sticky= "nsew")
+            
+        self.txt_list.configure(state= "disabled")
+
+def open_cutList():
+    btn_pack.config(state = "normal")
+
+def clear_cutList():
+    btn_pack.config(state = "disabled")
 
 def pack():
-    global stringOutput
     try:
         orderLength = float(ent_length.get())
         overflow = float(ent_overflow.get())
@@ -332,25 +336,27 @@ def main():
         padx=5, 
         pady=5, 
         )
-    frm_input.pack_propagate(False)
 
-    Label(
+    lbl_input = Label(
+                    frm_input, 
+                    text= "Pack Settings", 
+                    )
+
+    import_cutList = List_Import(
         frm_input, 
-        text= "Pack Settings", 
-        ).pack()
-
-    frm_cutList = list_import_panel(frm_input, "Add Cut List", cutList, True)
-    frm_inventory = list_import_panel(frm_input, "Add Inventory List (Optional)", inventoryList)
-
-    frm_length = Frame(master= frm_input, pady=5)
-    ent_length = Entry(master= frm_length, width=10, border=2)
-    ent_length.insert(0, "96")
-    lbl_length = Label(master= frm_length, text= "Order Length")
-
-    frm_overflow = Frame(master= frm_input, pady=5)
-    ent_overflow = Entry(master= frm_overflow, width=10, border=2)
-    ent_overflow.insert(0, "24")
-    lbl_overflow = Label(master= frm_overflow, text= "Overflow Increment")
+        list_variable = cutList,
+        open_command = open_cutList,
+        clear_command = clear_cutList,
+        text= "Add Cut List"
+    )
+    import_inventory = List_Import(
+        frm_input, 
+        list_variable = inventoryList,
+        text= "Add Inventory List (Optional)",
+        title_bg= "LightCyan",
+        list_fg= "DarkCyan"
+    )
+    cnvs_settings = Canvas(frm_input)
 
     lbl_error = Label(
         master = frm_input,
@@ -381,21 +387,10 @@ def main():
     list_paned = PanedWindow(master=frm_list, orient="vertical")
     frm_order = Frame(master=frm_list)
 
-    frm_listTitle = Frame(master=frm_order)
     lbl_output = Label(
-        master= frm_listTitle,
+        master= frm_order,
         text="Packing Output",
         bd=6
-    )
-
-    lbl_check = Label(master= frm_listTitle, text="Visualize Cuts")
-
-    checkbox_vis = BooleanVar(value=False)
-    checkBtn_vis = Checkbutton(
-        master= frm_listTitle,
-        text="",
-        variable= checkbox_vis,
-        command= toggle_visualize
     )
     
     txt_order = st.ScrolledText(frm_order, width=50, height=12)
@@ -424,6 +419,14 @@ def main():
     )
 
     btn_save.config(state= "disabled")
+
+    checkbox_vis = BooleanVar(value=False)
+    checkBtn_vis = Checkbutton(
+        master= frm_save,
+        text="Visualize Cuts",
+        variable= checkbox_vis,
+        command= toggle_visualize
+    )
 
     frm_vis = Frame(master= frm_output, relief="raised", bd=3)
 
@@ -471,28 +474,25 @@ def main():
     cnvs_vis.bind("<Leave>", _unbind_mousewheel)
 
     paned.grid(row=0, column=0, columnspan=2, sticky="nsew")
-    paned.add(frm_input, minsize=200)
-    paned.add(frm_output, minsize=300)
+    paned.add(frm_input, minsize=300)
+    paned.add(frm_output, minsize=100)
 
     window.columnconfigure(0, minsize=150)
     window.columnconfigure(1, weight=1)
     window.rowconfigure(0, minsize=650, weight=1)
 
-    frm_cutList.pack(fill="x", anchor="nw")
-    frm_inventory.pack(fill="x", anchor="nw")
+    frm_input.columnconfigure(0, weight=1)
+    frm_input.rowconfigure([1,2], weight=1)
+    lbl_input.grid(column=0, row=0, sticky="n")
+    import_cutList.grid(column=0, row=1, sticky= "ew", pady=(0, 5))
+    import_inventory.grid(column=0, row=2, sticky= "ew", pady=(0, 5))
+    #cnvs_settings.grid(column=0, row=3, sticky= "w", pady=(0, 5))
 
-    lbl_stats.pack(side="bottom")
-    btn_pack.pack(side="bottom", pady=10)
-    lbl_error.pack()
-    lbl_error.pack_forget()
+    lbl_error.grid(column=0, row=4, sticky="s")
+    btn_pack.grid(column=0, row=5, sticky="s", pady=10)
+    lbl_stats.grid(column=0, row=6, sticky="s", pady=10)
 
-    frm_overflow.pack(side="bottom", anchor="e")
-    lbl_overflow.grid(column=0, row=0, sticky="e")
-    ent_overflow.grid(column=1, row=0, sticky="e")
-
-    frm_length.pack(side="bottom", anchor="e")
-    lbl_length.grid(column=0, row=0, sticky="e")
-    ent_length.grid(column=1, row=0, sticky="e")
+    lbl_error.grid_remove()
 
     frm_output.columnconfigure(0, weight=1)
     frm_output.rowconfigure(0, weight=1)
@@ -507,26 +507,21 @@ def main():
     list_paned.add(frm_instructions, minsize= 50)
     frm_order.rowconfigure(1, weight=1)
     frm_order.columnconfigure(0, weight=1)
-    frm_listTitle.grid(row=0, column=0, sticky="ew")
+    lbl_output.grid(column=0, row=0, columnspan=3, sticky="ew")
     txt_order.grid(row=1, column=0, sticky="nsew")
     frm_instructions.rowconfigure(0, weight=1)
     frm_instructions.rowconfigure(1, weight=0)
     frm_instructions.columnconfigure(0, weight=1)
     txt_instructions.grid(row=0, column=0, sticky="nsew")
 
-    frm_save.grid(row=1, column=0, sticky="e")
+    frm_save.grid(row=1, column=0, sticky="ew")
     frm_save.columnconfigure(0, weight=1)
     frm_save.columnconfigure(1, weight=1)
-    btn_save_spreadsheet.grid(row=0, column=0, sticky="e", padx=5, pady=5)
-    btn_save.grid(row=0, column=1, sticky="e", padx=5, pady=5)
+
+    checkBtn_vis.grid(column=0, row=0, sticky="w", padx=(0, 5))
+    btn_save_spreadsheet.grid(row=0, column=3, sticky="e", padx=5, pady=5)
+    btn_save.grid(row=0, column=4, sticky="e", padx=5, pady=5)
     
-    frm_listTitle.grid(row=0, column=0, sticky="ew")
-    frm_listTitle.columnconfigure(0, weight=1)
-    frm_listTitle.columnconfigure(1, weight=1)
-    frm_listTitle.columnconfigure(2, weight=0)
-    lbl_output.grid(column=0, row=0, columnspan=3, sticky="ew")
-    lbl_check.grid(column=1, row=0, sticky="e")
-    checkBtn_vis.grid(column=2, row=0, sticky="e", padx=(0, 5))
 
     frm_vis.rowconfigure(1, weight=1)
     frm_vis.columnconfigure(0, weight=1)
@@ -534,7 +529,6 @@ def main():
     frm_visTitle.grid(column=0, row=0, sticky="ew")
     frm_visTitle.columnconfigure(0, weight=1)
     frm_visTitle.columnconfigure(1, weight=1)
-    frm_listTitle.columnconfigure(2, weight=0)
     lbl_vis.grid(column=0, row=0, columnspan=3, sticky="ew")
     lbl_checkVisLabel.grid(column=1, row=0, sticky="e")
     checkBtn_visLabel.grid(column=2, row=0, sticky="e", padx=(0, 5))
