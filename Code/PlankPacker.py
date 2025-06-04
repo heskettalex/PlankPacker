@@ -1,5 +1,5 @@
 import tkinter as tk
-from tkinter import Frame, Button, BooleanVar, StringVar, Label, Entry, RAISED, END, Canvas, Scrollbar, Checkbutton, PanedWindow
+from tkinter import Frame, Button, BooleanVar, StringVar, Label, LabelFrame, Entry, RAISED, END, Canvas, Scrollbar, Checkbutton, PanedWindow
 import tkinter.font as tkfont
 from tkinter.filedialog import askopenfilename, asksaveasfilename
 import tkinter.scrolledtext as st
@@ -129,37 +129,52 @@ def open_cutList(widget):
     global fileName
     btn_pack.config(state = "normal")
     fileName = widget.lbl_title['text']
+    for item in frm_length_entries.winfo_children():
+        item.destroy()
+    order_length_vars.clear()
+
+    for i, category in enumerate(widget.list_variable):
+        lbl_entry = Label(frm_length_entries, text=f"{category[0]}x{category[1]}:",  bg="white")
+        var = StringVar(frm_length_entries, "96")
+        order_length_vars.append(var)
+        entry = Entry(
+            frm_length_entries, 
+            validate= "key",
+            validatecommand= (frm_length_entries.register(order_length_validate), "%P"),
+            width=10,
+            bd=2, 
+            textvariable= var
+            )
+        lbl_entry.grid(row=i, column=0, sticky="e")
+        entry.grid(row=i, column=1, sticky="e", pady=5)
 
 def clear_cutList(widget):
     btn_pack.config(state = "disabled")
 
 def pack():
     global stringOutput
-    order_lengths = ent_order_lengths.get().split(",")
-    order_lengths = [float(i.replace(" ", "")) for i in order_lengths]
-    order_lengths.sort()
-
-    max_cut_length = 0
-    for category in cut_list:
-        for plank in cut_list[category]:
-            if plank[0] > max_cut_length:
-                max_cut_length = plank[0]
-    max_inventory_length = 0
-    for category in inventory_list:
-        for plank in inventory_list[category]:
-            if plank[0] > max_inventory_length:
-                max_inventory_length = plank[0]
-
-    max_order_length = order_lengths[len(order_lengths) - 1]
-    if max_cut_length > max_order_length and max_inventory_length < max_order_length:
-        lbl_error.grid(column=0, row=4, sticky="s")
-        lbl_error['text'] = f"Error: Cut ({max_cut_length}\") too large for provided order lengths"
-        return
-    
+    order_lengths = {}
+    entries = []
+    for i, category in enumerate(cut_list):
+        lengths = []
+        for length in order_length_vars[i].get().split(","):
+            length.replace(" ", "")
+            if length == "":
+                lengths.append(0)
+            else:
+                lengths.append(float(length))
+        lengths.sort()
+        order_lengths[category] = lengths
+   
     lbl_error.grid_forget()
     
     packedList.clear()
-    packedList.update(PackingAlgorithm.packCuts(cut_list, order_lengths, inventory_list))
+    try:
+        packedList.update(PackingAlgorithm.packCuts(cut_list, order_lengths, inventory_list))
+    except Exception as e:
+        lbl_error.grid(column=0, row=4, sticky="s")
+        lbl_error['text'] = e
+        return
     
     stats = CutListAnalyzer.stats(packedList)
     lbl_stats["text"] = stats
@@ -192,8 +207,10 @@ def pack():
     visualize()
 
 def order_length_validate(input: str):
+    if input == "":
+        return True
     newCharacter = input[len(input) - 1]
-    if newCharacter.isdigit() or newCharacter == "," or newCharacter == " ":
+    if newCharacter.isdigit() or newCharacter == "," or newCharacter == " " or newCharacter == ".":
         return True
     else:
         return False
@@ -343,13 +360,14 @@ def toggle_visualize():
         window.update_idletasks()
 
 def main():
-    global fileName, cut_list, inventory_list, packedList, stringOutput, window, btn_pack, txt_order, txt_instructions, frm_list, frm_vis, output_paned, checkbox_vis, checkbox_visLabel, cnvs_vis, lbl_error, ent_order_lengths, lbl_stats, btn_save, btn_save_spreadsheet, last_vis_size
+    global fileName, cut_list, inventory_list, packedList, stringOutput, window, btn_pack, txt_order, txt_instructions, frm_list, frm_vis, output_paned, checkbox_vis, checkbox_visLabel, cnvs_vis, frm_length_entries, order_length_vars, lbl_error, lbl_stats, btn_save, btn_save_spreadsheet, last_vis_size
     cut_list = {}
     inventory_list = {}
     packedList = {}
     stringOutput = ""
     last_vis_size = 600
     fileName = ""
+    order_length_vars = []
     
     window = tk.Tk()
     window.title("PlankPacker")
@@ -365,9 +383,9 @@ def main():
         )
     
     lbl_input = Label(
-                    frm_input, 
-                    text= "Pack Settings", 
-                    )
+        frm_input, 
+        text= "Pack Settings", 
+    )
 
     import_cutList = List_Import(
         frm_input, 
@@ -384,23 +402,15 @@ def main():
         list_fg= "DarkCyan"
     )
 
-    frm_order_lengths = Frame(frm_input)
-    lbl_order_lengths = Label(frm_order_lengths, text="Order Lengths (comma separated):")
-    order_lengths = StringVar(value= "96")
-    ent_order_lengths = Entry(
-        master= frm_order_lengths,
-        textvariable= order_lengths,
-        width=10,
-        bd=2,
-        validate= "key",
-        validatecommand= (frm_order_lengths.register(order_length_validate), "%P")
-    )
+    frm_order_lengths = LabelFrame(frm_input, text="Order Lengths (comma separated)", bd= 3)
+    frm_order_lengths.rowconfigure(0, weight=1)
 
-    lbl_error = Label(
-        master = frm_input,
-        text= "",
-        fg= "red"
-    )
+    txt_order_lengths = st.ScrolledText(frm_order_lengths, width=0, height=10)
+    frm_length_entries = Frame(txt_order_lengths, bg="white", bd=2)
+    txt_order_lengths.window_create(END, window=frm_length_entries)
+    txt_order_lengths.configure(state= "disabled")
+    frm_order_lengths.columnconfigure(0, weight=1)
+    lbl_error = Label(frm_input, text="", fg="red", wraplength=200)
 
     btn_pack = Button(
         master= frm_input,
@@ -521,15 +531,12 @@ def main():
     import_cutList.grid(column=0, row=1, sticky= "new", pady=(0, 5))
     import_inventory.grid(column=0, row=2, sticky= "new", pady=(0, 5))
 
-    frm_order_lengths.grid(column=0, row=3, sticky="se")
-
-    lbl_order_lengths.grid(column=0, row=0, sticky="e")
-    ent_order_lengths.grid(column=1, row=0, sticky="e")
-    lbl_error.grid(column=0, row=4, sticky="s")
+    frm_order_lengths.grid(column=0, row=3, sticky="sew")
+    txt_order_lengths.grid(sticky="nsew")
+    lbl_error.grid(column=0, row=4)
     btn_pack.grid(column=0, row=5, sticky="s", pady=10)
     lbl_stats.grid(column=0, row=6, sticky="s", pady=(0, 10))
     
-    lbl_error.grid_remove()
     lbl_stats.grid_remove()
 
     frm_output.columnconfigure(0, weight=1)

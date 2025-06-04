@@ -16,7 +16,7 @@ class Plank:
     
     def addCut(self, cut: tuple):
         if cut[0] > self.freeStock():
-            raise ValueError(f"Cut {cut[0]} is too long for plank of length {self.length}.")
+            raise ValueError(f"Cut {cut[0]}\" is too long for plank of length {self.length}\".")
         self.cuts.append(cut)
 
     def __str__(self):

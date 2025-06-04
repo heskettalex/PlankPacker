@@ -3,17 +3,15 @@ import math
 
 def packCuts(cuts, order_lengths, inventory=None):
     packedCuts = {key: None for key in cuts}
-
     for category in packedCuts:
         packedCuts[category] = []
-        packedCuts[category].append(Plank(order_lengths[0]))
+        packedCuts[category].append(Plank(order_lengths[category][0]))
         try:
             for length, note in inventory[category]:
                 inventoryPlank = Plank(length, note, True)
                 packedCuts[category].append(inventoryPlank)
         except Exception:
             pass
-
         packedCuts[category].reverse()
         for cut_length, note in cuts[category]:
             placed = False
@@ -25,10 +23,13 @@ def packCuts(cuts, order_lengths, inventory=None):
                 except ValueError:
                     continue
             if not placed:
-                for length in order_lengths:
-                    if cut_length < length:
+                newPlank = None
+                for length in order_lengths[category]:
+                    if cut_length <= length:
                         newPlank = Plank(length)
                         break
+                if newPlank is None:
+                    raise Exception(f"Cut {cut_length}\" in category {category[0]}x{category[1]} is too large for provided order length(s)")
                 newPlank.addCut((cut_length, note))
 
                 inserted = False
