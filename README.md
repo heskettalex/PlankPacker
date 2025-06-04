@@ -40,18 +40,14 @@ Example measurement lines: `3x 48`, `1x 96 1/16" #45 degrees /==\, 2x72.5`
 ```
 As mentioned before, empty lines, indents, and unit symbols like " are ignored by PlankPacker when imported. ` 8x 120"` will be read as `8x120`.
 
-Once PlankPacker is provided at least an input cut list to work with, the packing algorithm may be run. There are two parameters available before clicking "Pack": **Order Length** and **Overflow Increment**. Both values should be input as whole or decimal numbers, with no additional characters.
-
-**Order Length** indicates the standard plank/material length to pack the cuts to. This can also be interpreted as "what length of plank are you ordering?"
-
-**Overflow Increment** tells PlankPacker how to handle cuts in the input cut list which exceed the standard order length provided previously. When a cut exceeds that length, PlankPacker will place it in a new plank rounded to the nearest multiple of the provided **overflow increment** above the **order length**. For example, if the order length is set to 96", the overflow increment is set to 24", and a cut is listed as 105", the algorithm will place that cut in a new plank of length 120" (one multiple of 24" above 96"). Ideally, one should avoid including oversized planks in a cut list, but PlankPacker is still prepared to handle them. 
+Once PlankPacker has at least an input cut list to work with, the packing algorithm must be provided at least one standard **order length** for each type of stock. The order lengths for each category represent what lengths of wood are available to order for each category of plank. By default, each category is assigned an order length of 96 inches (the standard plank length for most planks), but additional lengths can be added or removed from each section as long as they are seperated by a comma.
 
 ### Output
 Once the desired lists are opened and the packing algorithm has been run, PlankPacker will output a text file containing an **order summary** and **cut list instructions**. 
 - Order summary: How many additional planks are needed to create the desired cuts (after accounting for the inventory if provided).
 - Cut list instructions: How to cut the planks indicated in the input cut list from the newly ordered planks (and inventory if provided). Planks cut from an inventory item are tagged with a "*" and highlighted blue for clarity.
 
-This text file can be saved with the "Save" button in the upper right.
+This information can be saved as a text file or as a formatted spreadsheet for further use.
 
 ### Visualization
 To visualize how the cuts are spaced on each plank, check the "visualize cuts" checkbox in the upper right corner of the "packing output" panel. This visualization is only visible in the PlankPacker editor, and is not saved to the output.
