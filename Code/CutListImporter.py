@@ -64,7 +64,12 @@ def import_spreadsheet(input_file):
 
         current_category = cuts_dict[category_value]
         for j in range(2, sheet.max_row + 1):
-            count = sheet.cell(j, i).value
+            try:
+                measurement = float(sheet.cell(j, i).value)
+            except Exception:
+                continue
+    
+            count = sheet.cell(j, i + 1).value
             if count == "":
                 count = 1
             else:
@@ -72,12 +77,7 @@ def import_spreadsheet(input_file):
                     count = int(count)
                 except Exception:
                     continue
-            
-            try:
-                measurement = float(sheet.cell(j, i + 1).value)
-            except Exception:
-                continue
-            
+                       
             note = sheet.cell(j, i + 2).value
             if note == None:
                 note = ""

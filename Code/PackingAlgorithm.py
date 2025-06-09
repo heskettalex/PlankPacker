@@ -1,5 +1,4 @@
 from Plank import Plank
-import math
 
 def packCuts(cuts, order_lengths, inventory=None):
     packedCuts = {key: None for key in cuts}

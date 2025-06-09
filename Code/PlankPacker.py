@@ -10,7 +10,6 @@ from Plank import Plank
 from collections import Counter
 from Utils import value_to_frac
 import os
-import re
 import traceback
 
 class List_Import(Frame):

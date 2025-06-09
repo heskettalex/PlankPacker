@@ -1,6 +1,4 @@
-import math
 import xlsxwriter
-from Plank import Plank
 from Utils import value_to_frac
 from collections import Counter
 
