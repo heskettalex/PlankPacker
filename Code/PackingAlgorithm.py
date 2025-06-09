@@ -29,7 +29,7 @@ def packCuts(cuts, order_lengths, inventory=None):
                         newPlank = Plank(length)
                         break
                 if newPlank is None:
-                    raise Exception(f"Cut {cut_length}\" in category {category[0]}x{category[1]} is too large for provided order length(s)")
+                    raise Exception(f"Cut {cut_length}\" in category {category[0]}x{category[1]} is too large for order length {order_lengths[category][len(order_lengths[category]) - 1]}\"")
                 newPlank.addCut((cut_length, note))
 
                 inserted = False

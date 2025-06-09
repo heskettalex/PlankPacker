@@ -11,15 +11,20 @@ from collections import Counter
 from Utils import value_to_frac
 import os
 import re
+import traceback
 
 class List_Import(Frame):
     def open_list(self, open_command):
-        filepath = askopenfilename(filetypes=[("Text Files", ".txt"), ("All Files", "*.*")])
-        if not filepath:
+        if self.filepath == None:
+            self.filepath = askopenfilename(filetypes=[("Plank Lists", "*.txt *.xlsx"), ("All Files", "*.*")])
+        if not self.filepath:
             return
         self.list_variable.clear()
         try:
-            self.list_variable.update(CutListImporter.readCutList(filepath))
+            if os.path.splitext(self.filepath)[1] == ".txt":
+                self.list_variable.update(CutListImporter.import_text_list(self.filepath))
+            else:
+                self.list_variable.update(CutListImporter.import_spreadsheet(self.filepath))
             self.lbl_error.grid_remove()
             self.frm_txt.grid()
             self.btn_open.grid_remove()
@@ -35,16 +40,14 @@ class List_Import(Frame):
                     else:
                         cutListText += f" - {count}x {value_to_frac(length)} ({note})\"\n"
             self.txt_list.insert(END, cutListText)
-
-
-            self.lbl_title['text'] = os.path.basename(filepath)
+            self.lbl_title['text'] = os.path.basename(self.filepath)
             self.txt_list.configure(state="disabled")
             
             if open_command is not None:
                 open_command(self)
 
         except Exception as e:
-            print(e)
+            traceback.print_exc()
             self.lbl_error.grid()
 
     def clear_list(self, clear_command):
@@ -54,10 +57,12 @@ class List_Import(Frame):
 
         if clear_command is not None:
             clear_command(self)
+        self.filepath = None
 
     def __init__(self, parent, list_variable: dict, open_command=None, clear_command=None, text="", width=38, height=10, button_fg = "Black", button_bg = "White", title_fg = "Black", title_bg = "White", list_fg= "Black", list_bg = "White"):
         Frame.__init__(self, parent)
 
+        self.filepath = None
         self.list_variable = list_variable
         self.open_command = open_command
 
@@ -108,6 +113,14 @@ class List_Import(Frame):
             bg = title_bg
         )
 
+        self.btn_reload = Button(
+            master=self.frm_label,
+            text="⟳",
+            bg=title_bg,
+            padx=4,
+            command= lambda: self.open_list(open_command)
+        )
+
         self.frm_button.grid(row=0, sticky="w")
         self.btn_open.grid(row=0, sticky="w")
         self.lbl_error.grid(row=1, sticky="w")
@@ -119,8 +132,10 @@ class List_Import(Frame):
         self.frm_txt.columnconfigure(0, weight=1)
         
         self.frm_label.grid(row=0, sticky= "ew")
+        self.frm_label.columnconfigure(1, weight=1)
         self.btn_close.grid(column=0, row=0, sticky="w")
         self.lbl_title.grid(column=1, row=0, sticky="w")
+        self.btn_reload.grid(column=2, row=0, sticky="e")
         self.txt_list.grid(row=1, sticky= "nsew")
             
         self.txt_list.configure(state= "disabled")
@@ -134,27 +149,43 @@ def open_cutList(widget):
     order_length_vars.clear()
 
     for i, category in enumerate(widget.list_variable):
-        lbl_entry = Label(frm_length_entries, text=f"{category[0]}x{category[1]}:",  bg="white")
-        var = StringVar(frm_length_entries, "96")
+        frm_entry = Frame(frm_length_entries, bg="white")
+        lbl_entry = Label(frm_entry, text=f"{category[0]}x{category[1]}:",  bg="white")
+        var = StringVar(frm_entry, "96")
         order_length_vars.append(var)
         entry = Entry(
-            frm_length_entries, 
+            frm_entry, 
             validate= "key",
-            validatecommand= (frm_length_entries.register(order_length_validate), "%P"),
+            validatecommand= (frm_entry.register(order_length_validate), "%P"),
             width=10,
             bd=2, 
             textvariable= var
             )
-        lbl_entry.grid(row=i, column=0, sticky="e")
-        entry.grid(row=i, column=1, sticky="e", pady=5)
+        lbl_stats = Label(frm_entry, text="",  bg="white", justify="left")
+        lbl_entry.grid(row=0, column=0, sticky="e")
+        entry.grid(row=0, column=1, sticky="e", pady=5)
+        lbl_stats.grid(row=0, column=2, sticky="ew")
+        frm_entry.grid(row=i, column=0, sticky="ew")
 
 def clear_cutList(widget):
+    for item in frm_length_entries.winfo_children():
+        item.destroy()
+    order_length_vars.clear()
     btn_pack.config(state = "disabled")
 
+    txt_order.configure(state="normal")
+    txt_order.delete("1.0", END)
+    txt_order.config(state = "disabled")
+
+    txt_instructions.configure(state="normal")
+    txt_instructions.delete("1.0", END)
+    txt_instructions.config(state = "disabled")
+
+    cnvs_vis.delete("all")
+    lbl_stats["text"] = ""
 def pack():
     global stringOutput
     order_lengths = {}
-    entries = []
     for i, category in enumerate(cut_list):
         lengths = []
         for length in order_length_vars[i].get().split(","):
@@ -168,20 +199,25 @@ def pack():
    
     lbl_error.grid_forget()
     
-    packedList.clear()
+    entry_frames = frm_length_entries.winfo_children()
+    packed_list.clear()
     try:
-        packedList.update(PackingAlgorithm.packCuts(cut_list, order_lengths, inventory_list))
+        packed_list.update(PackingAlgorithm.packCuts(cut_list, order_lengths, inventory_list))
     except Exception as e:
         lbl_error.grid(column=0, row=4, sticky="s")
         lbl_error['text'] = e
+        for entry in entry_frames:
+           entry.winfo_children()[2]["text"] = ""
         return
     
-    stats = CutListAnalyzer.stats(packedList)
-    lbl_stats["text"] = stats
-    lbl_stats.grid()
+    for i, category in enumerate(packed_list):
+        stats = CutListAnalyzer.stats(packed_list[category])
+        entry_frames[i].winfo_children()[2]["text"] = stats
     
-    order = CutListAnalyzer.summary(packedList)
-    instructions = CutListAnalyzer.printCuts(packedList)
+    total_stats = CutListAnalyzer.stats(packed_list)
+    lbl_stats["text"] = total_stats
+    order = CutListAnalyzer.summary(packed_list)
+    instructions = CutListAnalyzer.printCuts(packed_list)
     
     stringOutput = f"{order}\n{instructions}"
     txt_order.configure(state="normal")
@@ -232,11 +268,11 @@ def visualize():
     bar_scale = 5
     bar_thickness = 0
     bar_thickness = 25
-    for category in packedList:
+    for category in packed_list:
         thickness, width = category
         row += bar_thickness / 2 + padding + 25
         cnvs_vis.create_text(20, row, text=f"{thickness}x{width}:", anchor="w")
-        plank_counter = Counter(packedList[category]).most_common()
+        plank_counter = Counter(packed_list[category]).most_common()
         plank_counter = sorted(plank_counter, key=lambda x: x[0].inventory)
         first = True
         for plank, count in plank_counter:
@@ -319,7 +355,7 @@ def visualize():
                 )
 
     bounds = cnvs_vis.bbox("all")
-    cnvs_vis.config(scrollregion= (0, bounds[1] - 25, bounds[2], bounds[3] + 5))
+    cnvs_vis.config(scrollregion= (bounds[0], bounds[1] - 25, bounds[2], bounds[3] + 5))
 
 def save_txt():
     filepath = asksaveasfilename(
@@ -341,7 +377,7 @@ def save_spreadsheet():
     if not filepath:
         return
     
-    CutListAnalyzer.generate_spreadsheet(packedList, filepath)
+    CutListAnalyzer.generate_spreadsheet(packed_list, filepath)
 
 def toggle_visualize():
     global last_vis_size
@@ -360,12 +396,12 @@ def toggle_visualize():
         window.update_idletasks()
 
 def main():
-    global fileName, cut_list, inventory_list, packedList, stringOutput, window, btn_pack, txt_order, txt_instructions, frm_list, frm_vis, output_paned, checkbox_vis, checkbox_visLabel, cnvs_vis, frm_length_entries, order_length_vars, lbl_error, lbl_stats, btn_save, btn_save_spreadsheet, last_vis_size
+    global fileName, cut_list, inventory_list, packed_list, stringOutput, window, btn_pack, txt_order, txt_instructions, frm_list, frm_vis, output_paned, checkbox_vis, checkbox_visLabel, cnvs_vis, frm_length_entries, order_length_vars, lbl_error, lbl_stats, btn_save, btn_save_spreadsheet, last_vis_size
     cut_list = {}
     inventory_list = {}
-    packedList = {}
+    packed_list = {}
     stringOutput = ""
-    last_vis_size = 600
+    last_vis_size = 700
     fileName = ""
     order_length_vars = []
     
@@ -404,6 +440,7 @@ def main():
 
     frm_order_lengths = LabelFrame(frm_input, text="Order Lengths (comma separated)", bd= 3)
     frm_order_lengths.rowconfigure(0, weight=1)
+    frm_order_lengths.columnconfigure(0, weight=1)
 
     txt_order_lengths = st.ScrolledText(frm_order_lengths, width=0, height=10)
     frm_length_entries = Frame(txt_order_lengths, bg="white", bd=2)
@@ -425,7 +462,7 @@ def main():
 
     lbl_stats = Label(
         master=frm_input,
-        text="\n"
+        text=""
     )
 
     frm_output = Frame(master=paned)
@@ -534,10 +571,9 @@ def main():
     frm_order_lengths.grid(column=0, row=3, sticky="sew")
     txt_order_lengths.grid(sticky="nsew")
     lbl_error.grid(column=0, row=4)
+    lbl_error.grid_forget()
     btn_pack.grid(column=0, row=5, sticky="s", pady=10)
     lbl_stats.grid(column=0, row=6, sticky="s", pady=(0, 10))
-    
-    lbl_stats.grid_remove()
 
     frm_output.columnconfigure(0, weight=1)
     frm_output.rowconfigure(0, weight=1)

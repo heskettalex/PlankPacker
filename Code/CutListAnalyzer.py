@@ -11,15 +11,24 @@ def stats(cuts):
     totalCuts = 0
     inventoryCuts = 0
 
-    for category in cuts:
-        for plank in cuts[category]:
+    if isinstance(cuts, list):
+        for plank in cuts:
             totalLength += plank.length
             totalWaste += plank.freeStock()
             if plank.inventory:
                 inventoryCuts += len(plank.cuts)
             totalCuts += len(plank.cuts)
+    else:
+        for category in cuts:
+            for plank in cuts[category]:
+                totalLength += plank.length
+                totalWaste += plank.freeStock()
+                if plank.inventory:
+                    inventoryCuts += len(plank.cuts)
+                totalCuts += len(plank.cuts)
 
-    return f"Waste: {totalWaste / totalLength * 100:.1f}%\nInventory utilization: {inventoryCuts / totalCuts * 100:.1f}%"
+    return f"{totalWaste / totalLength * 100:.1f}% waste\n{inventoryCuts / totalCuts * 100:.1f}% from inventory"
+
 
 def get_order(cuts):
     order = {}
