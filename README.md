@@ -1,3 +1,5 @@
+Download PlankPacker.zip to start packing!
+
 ![PlankPacker Icon](https://github.com/heskettalex/PlankPacker/blob/main/Assets/icon.png)
 # Welcome to PlankPacker!
 
