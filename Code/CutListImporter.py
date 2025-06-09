@@ -58,7 +58,6 @@ def import_spreadsheet(input_file):
         
         if not "x" in category_value:
             continue
-        print(category_value)
         category_value = (int(category_value[0:category_value.index("x")]), int(category_value[category_value.index("x") + 1:]))
         if not category_value in cuts_dict:
             cuts_dict[category_value] = []

@@ -167,9 +167,11 @@ def open_cutList(widget):
         lbl_stats.grid(row=0, column=2, sticky="ew")
         frm_entry.grid(row=i, column=0, sticky="ew")
 
+    frm_order_lengths.grid(column=0, row=3, sticky="sew")
+    
+
 def clear_cutList(widget):
-    for item in frm_length_entries.winfo_children():
-        item.destroy()
+    frm_order_lengths.grid_remove()
     order_length_vars.clear()
     btn_pack.config(state = "disabled")
 
@@ -396,7 +398,7 @@ def toggle_visualize():
         window.update_idletasks()
 
 def main():
-    global fileName, cut_list, inventory_list, packed_list, stringOutput, window, btn_pack, txt_order, txt_instructions, frm_list, frm_vis, output_paned, checkbox_vis, checkbox_visLabel, cnvs_vis, frm_length_entries, order_length_vars, lbl_error, lbl_stats, btn_save, btn_save_spreadsheet, last_vis_size
+    global fileName, cut_list, inventory_list, packed_list, stringOutput, window, btn_pack, txt_order, txt_instructions, frm_list, frm_vis, output_paned, checkbox_vis, checkbox_visLabel, cnvs_vis, frm_length_entries, frm_order_lengths, order_length_vars, lbl_error, lbl_stats, btn_save, btn_save_spreadsheet, last_vis_size
     cut_list = {}
     inventory_list = {}
     packed_list = {}
@@ -568,7 +570,6 @@ def main():
     import_cutList.grid(column=0, row=1, sticky= "new", pady=(0, 5))
     import_inventory.grid(column=0, row=2, sticky= "new", pady=(0, 5))
 
-    frm_order_lengths.grid(column=0, row=3, sticky="sew")
     txt_order_lengths.grid(sticky="nsew")
     lbl_error.grid(column=0, row=4)
     lbl_error.grid_forget()
